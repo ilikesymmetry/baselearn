@@ -1,0 +1,87 @@
+---
+title: 'Block Explorer Fundamentals'
+---
+
+In the previous section, we explored how to interact with a smart contract via CLI.
+In this section, we'll explore how to interact with a smart contract via a block explorer.
+
+**The block explorer is the single most important and underrated tool for anyone building onchain.**
+Regardless of what part of the stack you work in (chain, smart contracts, backend, frontend), this is your ultimate debugging tool to understand what's actually happening onchain.
+
+We'll use [Sepolia BaseScan](https://sepolia.basescan.org/) as our block explorer. 
+Follow along with the following steps to get familiar navigating the block explorer.
+
+## View Verified Source Code
+
+First navigate to our deployed [Higher contract](https://sepolia.basescan.org/address/0x4B2c6DFf1d611A0e31684FAEc557FFf7c675f525) from the previous section.
+Then click on the `Contract` tab and you should see the verified source code.
+
+![Verified Source Code](../images/verified-source.gif)
+
+## Read Contract
+
+Click the `Read Contract` tab and you should see the contract's `height` function. Functions with arguments will have form fields for each argument.
+
+![Read Contract](../images/read-contract.gif)
+
+## Write Contract
+
+Click the `Write Contract` tab and you should see the contract's `higher` function. First, you need to connect your wallet by clicking `🔴 Connect to Web3`.
+Then, you can call the `higher` function by clicking the function, entering the increase value, and clicking `Write` to submit the transaction request. 
+Finally, approve the transaction in your wallet.
+
+![Write Contract](../images/write-contract.gif)
+
+## View Logs
+
+Click the `Events` tab and you should see the contract's `WentHigher` events. You can decode the event fields into specific types to be more human readable.
+
+![View Logs](../images/view-logs.gif)
+
+## Inspect Transactions
+
+Click the `Transactions` tab and you should see the transactions submitted to the contract. Click on a transaction (example) to view its receipt.
+
+![Transactions](../images/transactions.gif)
+
+### Logs
+
+Click on the `Logs` subtab to view the logs for the transaction.
+
+![Transaction Logs](../images/transaction-logs.gif)
+
+### Calldata
+
+Expand the transaction details and scroll to the bottom to see the calldata. 
+
+![Transaction Calldata](../images/transaction-calldata.gif)
+
+This is the data that was sent from your wallet to the contract and encodes the function call and arguments. 
+Note how the `Method ID` is the first 4 bytes of the calldata and the arguments are the remaining bytes.
+This ID is also called the "function selector" and is used to identify the function to call by the smart contract.
+The function selector is calculated by taking the first 4 bytes of the hash of the function signature (name and arguments).
+
+Verify this yourself by running the following commands:
+```bash
+cast keccak "higher(uint256)"
+cast calldata "higher(uint256)" 1
+```
+
+When a smart contract receives a call where the first 4 bytes do not match a known function selector, it will attempt to run a `fallback()` function and revert if it does not exist.
+
+### Transaction Fee and Gas Values
+
+The transaction fee is calculated using multiple gas-related parameters from the transaction.
+
+The term "gas" is often used imprecisely to describe different things. To set the record straight:
+* **Gas**: The amount of <Tooltip tip="Reads, writes, and other operations.">computational work</Tooltip> required to execute a transaction.
+* **Gas Price**: The <Tooltip tip="EIP-1559 defines 'base fees' and 'priority fees' that dynamically adjust based on blockspace demand.">market price</Tooltip> of gas measured in units of ether per gas, most often <Tooltip tip="1 ether = 10^18 wei = 10^9 • 10^9 wei = 10^9 giga wei = 10^9 gwei">gwei</Tooltip>.
+* **Gas Limit**: The maximum amount of gas to consume during execution.
+* **Gas Used**: The amount of gas that was <Tooltip tip="Because of the delay between transaction submission and inclusion, executed code paths may differ due to conditionals.">actually used</Tooltip> to execute a transaction.
+* **Transaction Fee**: The <Tooltip tip="Calculated by multiplying `gas used` and `gas price`.">amount of ether</Tooltip> that was paid for the transaction.
+
+Keep the transaction details expanded to view all gas-related parameters.
+
+![Transaction Fee and Gas](../images/transaction-fee.gif)
+
+

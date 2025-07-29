@@ -1,0 +1,226 @@
+---
+title: 'Beginner Smart Contracts'
+---
+
+### Call Context
+
+```solidity Higher.sol lines
+contract Higher {
+    uint256 public height;
+
+    // [!code ++]
+    event WentHigher(uint256 increase, uint256 newHeight, address contributor);
+    // [!code --]
+    event WentHigher(uint256 increase, uint256 newHeight);
+
+    error AimHigher();
+
+    function higher(uint256 increase) external returns (uint256 newHeight) {
+        if (increase == 0) revert AimHigher();
+
+        newHeight = height + increase;
+        height = newHeight;
+        // [!code ++]
+        emit WentHigher(increase, newHeight, msg.sender);
+        // [!code --]
+        emit WentHigher(increase, newHeight);
+        return newHeight;
+    }
+}
+```
+
+### Payable Modifier
+
+```solidity Higher.sol lines
+contract Higher {
+    uint256 public height;
+
+    event WentHigher(uint256 increase, uint256 newHeight, address contributor);
+
+    error AimHigher();
+    // [!code ++]
+    error InvalidIncrease();
+
+    // [!code --]
+    function higher(uint256 increase) external returns (uint256 newHeight) {
+    // [!code ++:2]
+    function higher(uint256 increase) external payable returns (uint256 newHeight) {
+        if (msg.value != increase) revert InvalidIncrease();
+        if (increase == 0) revert AimHigher();
+
+        newHeight = height + increase;
+        height = newHeight;
+        emit WentHigher(increase, newHeight, msg.sender);
+        return newHeight;
+    }
+}
+```
+
+### Custom Modifiers
+
+```solidity Higher.sol lines
+
+```
+
+
+- custom modifier
+- structs + mappings
+- block context (block)
+- constants and immutables
+- constructor
+- external call
+- factory pattern
+- arrays
+
+```solidity Higher.sol lines
+contract Higher {
+    int public height;
+    bool public gameOver;
+    uint48 lastContribution;
+
+    struct Player {
+        uint200 totalContribution;
+        uint56 totalContributionCount;
+    }
+    mapping(address => Player) public players;
+
+    event WentHigher(int increase, int newHeight);
+    event Claimed(int finalHeight);
+
+    error GameOver();
+    error AimHigher();
+
+    function higher() external payable returns (int newHeight) {
+        if (gameOver) revert GameOver();
+        increase = msg.value;
+        if (increase == 0) revert AimHigher();
+        newHeight = height += increase;
+        emit WentHigher(increase, newHeight);
+        return newHeight;
+    }
+    
+    function claim() external {
+        if (gameOver) revert GameOver();
+        uint256 balance = address(this).balance;
+        if (balance == 0) revert AimHigher();
+        gameOver = true;
+        emit Claimed(height);
+        payable(msg.sender).call{value: balance}("");
+    }
+}
+```
+
+
+## Example: Higher Game
+
+### Balances
+
+```solidity lines
+contract Higher {
+    int public height;
+    // [!code ++]
+    bool public gameOver;
+
+    event WentHigher(int increase, int newHeight);
+    // [!code ++]
+    event Claimed(int finalHeight);
+
+    // [!code ++]
+    error GameOver();
+    error AimHigher();
+
+    // [!code --]
+    function higher(int increase) external returns (int newHeight) {
+    // [!code ++:3]
+    function higher() external payable returns (int newHeight) {
+        if (gameOver) revert GameOver();
+
+        increase = msg.value;
+        if (increase == 0) revert AimHigher();
+        
+        newHeight = height += increase;
+        emit WentHigher(increase, newHeight);
+        return newHeight;
+    }
+    
+    // [!code ++:10]
+    function claim() external returns (int finalHeight) {
+        if (gameOver) revert GameOver();
+
+        uint256 balance = address(this).balance;
+        if (balance == 0) revert AimHigher();
+
+        gameOver = true;
+        emit Claimed(height);
+        payable(msg.sender).call{value: balance}("");
+        return height;
+    }
+}
+```
+
+### Bytecode
+
+<CodeGroup>
+
+
+```solidity Highest.sol lines 
+import {Higher} from "./Higher.sol";
+
+contract Highest {
+    int public height;
+
+    event GameCreated(address game);
+    event NewHighest(int height, address game);
+
+    error InvalidGame();
+    error NotHigher();
+    
+    function newGame() external payable returns (address game) {
+        game = address(new Higher());
+        emit GameCreated(game);
+        return game;
+    }
+
+    function updateHighest(Higher game) external {
+        if (keccak256(address(game).code) != keccak256(Higher.code)) revert InvalidGame();
+        if (game.height() <= height) revert NotHigher();
+
+        height = game.height();
+        emit NewHighest(height, address(game));
+    }
+}
+```
+
+
+```solidity Higher.sol lines
+contract Higher {
+    int public height;
+    bool public gameOver;
+
+    event WentHigher(int increase, int newHeight);
+    event Claimed(int finalHeight);
+
+    error GameOver();
+    error AimHigher();
+
+    function higher() external payable returns (int newHeight) {
+        if (gameOver) revert GameOver();
+        increase = msg.value;
+        if (increase == 0) revert AimHigher();
+        newHeight = height += increase;
+        emit WentHigher(increase, newHeight);
+        return newHeight;
+    }
+    
+    function claim() external {
+        if (gameOver) revert GameOver();
+        uint256 balance = address(this).balance;
+        if (balance == 0) revert AimHigher();
+        gameOver = true;
+        emit Claimed(height);
+        payable(msg.sender).call{value: balance}("");
+    }
+}
+```
+
+</CodeGroup>
